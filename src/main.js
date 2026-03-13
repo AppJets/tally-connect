@@ -172,7 +172,7 @@ ipcMain.handle('get-config', () => {
   return {
     apiKey: store.get('apiKey', ''),
     apiSecret: store.get('apiSecret', ''),
-    syncUrl: store.get('syncUrl', 'http://localhost:3100/api/v1'),
+    syncUrl: store.get('syncUrl', 'http://localhost:3600/api/v1'),
     tallyPath: store.get('tallyPath', ''),
     autoSync: store.get('autoSync', true),
     syncInterval: store.get('syncInterval', 5),
@@ -192,6 +192,11 @@ ipcMain.handle('save-config', async (event, config) => {
     tallySync.stop();
   }
   tallySync = new TallySync(config);
+  tallySync.onStatusChange = (status, message) => {
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('sync-status', { status, message });
+    }
+  };
   if (config.autoSync) {
     tallySync.start();
   }
@@ -263,13 +268,18 @@ app.whenReady().then(() => {
   const config = {
     apiKey: store.get('apiKey'),
     apiSecret: store.get('apiSecret'),
-    syncUrl: store.get('syncUrl', 'http://localhost:3100/api/v1'),
+    syncUrl: store.get('syncUrl', 'http://localhost:3600/api/v1'),
     autoSync: store.get('autoSync', true),
     syncInterval: store.get('syncInterval', 5),
   };
 
   if (config.apiKey && config.apiSecret && config.autoSync) {
     tallySync = new TallySync(config);
+    tallySync.onStatusChange = (status, message) => {
+      if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('sync-status', { status, message });
+      }
+    };
     tallySync.start();
   }
 });

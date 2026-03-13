@@ -9,6 +9,9 @@ const PORT = 3600;
 const VALID_API_KEY = 'ltk_3a0d801c8d324153b0619f3f79685dea';
 const VALID_API_SECRET = 'lts_832211a2e822415fb6756383bb84cc89aeb6c453ac424abd938aa150d9faa8e5';
 
+// Connected users tracking
+const connectedUsers = new Map(); // key: uniqueId, value: user info
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -70,7 +73,24 @@ app.get('/api/v1/health', verifyApiKey, (req, res) => {
 
 // Sync data endpoint
 app.post('/api/v1/sync/data', verifyApiKey, verifySignature, (req, res) => {
-  const { company, ledgers, vouchers, syncedAt } = req.body;
+  const { company, ledgers, vouchers, syncedAt, deviceId } = req.body;
+
+  // Track connected user
+  const userId = deviceId || company?.guid || req.headers['x-api-key'];
+  if (userId) {
+    connectedUsers.set(userId, {
+      userId,
+      deviceId: deviceId || 'unknown',
+      companyName: company?.name || 'Unknown',
+      companyGuid: company?.guid || 'N/A',
+      lastSyncAt: new Date().toISOString(),
+      firstConnectedAt: connectedUsers.get(userId)?.firstConnectedAt || new Date().toISOString(),
+      syncCount: (connectedUsers.get(userId)?.syncCount || 0) + 1,
+      lastLedgersCount: ledgers?.length || 0,
+      lastVouchersCount: vouchers?.length || 0,
+      ipAddress: req.ip || req.connection?.remoteAddress || 'unknown'
+    });
+  }
 
   console.log('\n========== SYNC DATA RECEIVED ==========');
   console.log('Company:', company?.name || 'Unknown');
@@ -78,6 +98,7 @@ app.post('/api/v1/sync/data', verifyApiKey, verifySignature, (req, res) => {
   console.log('Ledgers:', ledgers?.length || 0);
   console.log('Vouchers:', vouchers?.length || 0);
   console.log('Synced At:', syncedAt);
+  console.log('Connected Users:', connectedUsers.size);
   console.log('=========================================\n');
 
   // Log sample data
@@ -107,14 +128,57 @@ app.post('/api/v1/sync/data', verifyApiKey, verifySignature, (req, res) => {
   });
 });
 
+// Get connected users count
+app.get('/api/v1/users/count', verifyApiKey, (req, res) => {
+  res.json({
+    success: true,
+    totalConnectedUsers: connectedUsers.size,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Get all connected users list
+app.get('/api/v1/users', verifyApiKey, (req, res) => {
+  const users = Array.from(connectedUsers.values());
+  res.json({
+    success: true,
+    totalConnectedUsers: connectedUsers.size,
+    users: users,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Get active users (synced in last N minutes, default 30)
+app.get('/api/v1/users/active', verifyApiKey, (req, res) => {
+  const minutes = parseInt(req.query.minutes) || 30;
+  const cutoff = new Date(Date.now() - minutes * 60 * 1000);
+
+  const activeUsers = Array.from(connectedUsers.values()).filter(user => {
+    return new Date(user.lastSyncAt) >= cutoff;
+  });
+
+  res.json({
+    success: true,
+    activeMinutes: minutes,
+    totalActiveUsers: activeUsers.length,
+    totalConnectedUsers: connectedUsers.size,
+    users: activeUsers,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
     name: 'LexOrigin Tally Sync Server',
     version: '1.0.0',
+    connectedUsers: connectedUsers.size,
     endpoints: {
       health: 'GET /api/v1/health',
-      sync: 'POST /api/v1/sync/data'
+      sync: 'POST /api/v1/sync/data',
+      usersCount: 'GET /api/v1/users/count',
+      usersList: 'GET /api/v1/users',
+      activeUsers: 'GET /api/v1/users/active?minutes=30'
     }
   });
 });
@@ -126,7 +190,10 @@ app.listen(PORT, () => {
   console.log(`  Running on http://localhost:${PORT}`);
   console.log(`========================================`);
   console.log(`\nEndpoints:`);
-  console.log(`  GET  /api/v1/health  - Connection test`);
-  console.log(`  POST /api/v1/sync/data - Receive sync data`);
+  console.log(`  GET  /api/v1/health       - Connection test`);
+  console.log(`  POST /api/v1/sync/data    - Receive sync data`);
+  console.log(`  GET  /api/v1/users/count  - Connected users count`);
+  console.log(`  GET  /api/v1/users        - List all connected users`);
+  console.log(`  GET  /api/v1/users/active - Active users (last 30 min)`);
   console.log(`\nWaiting for connections...\n`);
 });

@@ -398,7 +398,7 @@
 
       <div class="form-group">
         <label>Server URL</label>
-        <input type="text" id="syncUrl" placeholder="http://localhost:3100/api/v1">
+        <input type="text" id="syncUrl" placeholder="http://localhost:3600/api/v1">
       </div>
 
       <div class="btn-group">
@@ -524,7 +524,7 @@
       const config = await ipcRenderer.invoke('get-config');
       elements.apiKey.value = config.apiKey || '';
       elements.apiSecret.value = config.apiSecret || '';
-      elements.syncUrl.value = config.syncUrl || 'http://localhost:3100/api/v1';
+      elements.syncUrl.value = config.syncUrl || 'http://localhost:3600/api/v1';
       elements.autoSync.checked = config.autoSync !== false;
       elements.syncInterval.value = config.syncInterval || 5;
       tallyPath = config.tallyPath || '';
@@ -532,6 +532,22 @@
       if (config.apiKey && config.apiSecret) {
         setStatusBadge(elements.cloudStatus, 'success', 'Configured');
       }
+
+      // Listen for sync status updates from main process
+      ipcRenderer.on('sync-status', (event, data) => {
+        const { status, message } = data;
+        if (status === 'syncing') {
+          setStatusBadge(elements.syncStatus, 'loading', 'Syncing...');
+          addLog(message, 'info');
+        } else if (status === 'success') {
+          setStatusBadge(elements.syncStatus, 'success', 'Synced');
+          elements.lastSyncTime.textContent = `Last sync: ${new Date().toLocaleString()}`;
+          addLog(message, 'success');
+        } else if (status === 'error') {
+          setStatusBadge(elements.syncStatus, 'error', 'Failed');
+          addLog(message, 'error');
+        }
+      });
 
       // Auto-detect Tally
       detectTally();
