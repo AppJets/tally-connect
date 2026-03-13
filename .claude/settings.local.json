@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start-services.bat)",
+      "Bash(cmd.exe /c start-services.bat)",
+      "Bash(npm start)",
+      "Bash(cat:*)",
+      "Bash(tasklist)",
+      "Bash(findstr:*)",
+      "Bash(cmd.exe /c \"tasklist | findstr /i electron\")",
+      "Bash(/c/Windows/System32/cmd.exe /c \"tasklist | findstr /i electron\")",
+      "Bash(/c/Windows/System32/cmd.exe /c \"rmdir /s /q \"\"%APPDATA%\\\\lex-tally-connector\\\\GPUCache\"\" 2>nul & rmdir /s /q \"\"%APPDATA%\\\\lex-tally-connector\\\\Cache\"\" 2>nul & echo Done\")",
+      "Bash(/c/Windows/System32/cmd.exe /c \"if exist \"\"%APPDATA%\\\\lex-tally-connector\"\" \\(rmdir /s /q \"\"%APPDATA%\\\\lex-tally-connector\"\" && echo Cleared\\) else \\(echo No cache found\\)\")",
+      "Bash(powershell.exe -Command \"Remove-Item -Path \"\"$env:APPDATA\\\\lex-tally-connector\"\" -Recurse -Force -ErrorAction SilentlyContinue; Write-Host ''Cache cleared''\")",
+      "Bash(npm run start:dev:*)",
+      "Bash(powershell.exe -Command \"Get-NetTCPConnection -LocalPort 3100 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_OwningProcess -Force -ErrorAction SilentlyContinue }; Write-Host ''Port 3100 freed''\")",
+      "Bash(/c/Windows/System32/netstat.exe:*)",
+      "Bash(/c/Windows/System32/taskkill.exe /F /PID 25768)",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 25768 -Force\")",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 43484 -Force; Start-Sleep -Seconds 2; Write-Host ''Done''\")",
+      "Bash(powershell.exe -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 3; Write-Host ''All node processes killed''\")",
+      "Bash(dir /b:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install)",
+      "Bash(node server.js:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

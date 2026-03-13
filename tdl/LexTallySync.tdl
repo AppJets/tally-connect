@@ -1,0 +1,201 @@
+;; LexOrigin Tally Sync TDL Plugin
+;; Version: 1.0.0
+;; This plugin enables automatic data export from TallyPrime/Tally.ERP9
+
+[#Menu: Gateway of Tally]
+    Add: Key Item : LexOrigin Sync : L : CALL : LexSyncMenu
+
+[#Form: LexSyncMenu]
+    Parts: LexSyncPart
+    Width: 50% Page
+    Height: 40% Page
+
+[Part: LexSyncPart]
+    Lines: LexSyncTitle, LexSyncStatus, LexSyncButtons
+    Vertical Align: Top
+
+[Line: LexSyncTitle]
+    Fields: LexTitleField
+    Space Top: 1
+    Space Bottom: 1
+
+[Field: LexTitleField]
+    Set as: "LexOrigin Tally Connector"
+    Style: Large Bold
+    Align: Centre
+
+[Line: LexSyncStatus]
+    Fields: LexStatusField
+    Space Bottom: 2
+
+[Field: LexStatusField]
+    Set as: "Ready to sync data with LexOrigin cloud"
+    Align: Centre
+    Color: Blue
+
+[Line: LexSyncButtons]
+    Fields: LexSyncNowBtn, LexConfigBtn
+    Space Top: 1
+
+[Field: LexSyncNowBtn]
+    Type: Button
+    Set as: "Sync Now"
+    Key: Enter
+    Action: CALL : LexDoSync
+
+[Field: LexConfigBtn]
+    Type: Button
+    Set as: "Settings"
+    Key: S
+    Action: CALL : LexConfigForm
+
+;; HTTP Export Collection for Companies
+[Collection: LexCompanyList]
+    Type: Company
+    Fetch: Name, GUID, StartingFrom, Email
+
+;; HTTP Export Collection for Ledgers
+[Collection: LexLedgerList]
+    Type: Ledger
+    Fetch: Name, Parent, OpeningBalance, ClosingBalance, GUID
+
+;; HTTP Export Collection for Vouchers
+[Collection: LexVoucherList]
+    Type: Voucher
+    Fetch: VoucherNumber, Date, VoucherTypeName, Amount, PartyLedgerName, GUID
+
+;; HTTP Export Collection for Groups
+[Collection: LexGroupList]
+    Type: Group
+    Fetch: Name, Parent, GUID
+
+;; HTTP Export Collection for Stock Items
+[Collection: LexStockItemList]
+    Type: StockItem
+    Fetch: Name, Parent, BaseUnits, OpeningBalance, OpeningRate, OpeningValue, GUID
+
+;; Report for Company Export
+[Report: LexCompanyExport]
+    Form: LexExportForm
+    Title: "Company Export"
+
+[Report: LexLedgerExport]
+    Form: LexExportForm
+    Title: "Ledger Export"
+
+[Report: LexVoucherExport]
+    Form: LexExportForm
+    Title: "Voucher Export"
+
+;; Export Form
+[Form: LexExportForm]
+    Parts: LexExportPart
+    Output: XML
+
+[Part: LexExportPart]
+    Lines: LexExportLine
+    Repeat: LexExportLine: LexCompanyList
+
+[Line: LexExportLine]
+    Fields: LexDataField
+
+[Field: LexDataField]
+    Set as: $Name
+
+;; Configuration Form
+[#Form: LexConfigForm]
+    Parts: LexConfigPart
+    Width: 60% Page
+    Height: 50% Page
+
+[Part: LexConfigPart]
+    Lines: LexConfigTitle, LexConfigApiKey, LexConfigApiSecret, LexConfigUrl, LexConfigSave
+    Vertical Align: Top
+
+[Line: LexConfigTitle]
+    Fields: LexConfigTitleField
+    Space Bottom: 2
+
+[Field: LexConfigTitleField]
+    Set as: "LexOrigin Connection Settings"
+    Style: Large Bold
+    Align: Centre
+
+[Line: LexConfigApiKey]
+    Fields: LexApiKeyLabel, LexApiKeyInput
+    Space Bottom: 1
+
+[Field: LexApiKeyLabel]
+    Set as: "API Key:"
+    Width: 30% Page
+
+[Field: LexApiKeyInput]
+    Type: String
+    Width: 70% Page
+    Modifiable: Yes
+    Storage: LexAPIKey
+
+[Line: LexConfigApiSecret]
+    Fields: LexApiSecretLabel, LexApiSecretInput
+    Space Bottom: 1
+
+[Field: LexApiSecretLabel]
+    Set as: "API Secret:"
+    Width: 30% Page
+
+[Field: LexApiSecretInput]
+    Type: String
+    Width: 70% Page
+    Modifiable: Yes
+    Storage: LexAPISecret
+
+[Line: LexConfigUrl]
+    Fields: LexUrlLabel, LexUrlInput
+    Space Bottom: 2
+
+[Field: LexUrlLabel]
+    Set as: "Server URL:"
+    Width: 30% Page
+
+[Field: LexUrlInput]
+    Type: String
+    Width: 70% Page
+    Modifiable: Yes
+    Storage: LexServerURL
+    Set as: "http://localhost:3100/api/v1"
+
+[Line: LexConfigSave]
+    Fields: LexSaveConfigBtn
+    Align: Centre
+
+[Field: LexSaveConfigBtn]
+    Type: Button
+    Set as: "Save Configuration"
+    Key: Enter
+    Action: SAVE
+
+;; System Variables for Configuration Storage
+[System: Variable]
+    LexAPIKey: String
+    LexAPISecret: String
+    LexServerURL: String: "http://localhost:3100/api/v1"
+
+;; Sync Action
+[Function: LexDoSync]
+    00: DISPLAY: "Syncing data with LexOrigin..."
+    10: CALL: LexExportCompanies
+    20: CALL: LexExportLedgers
+    30: CALL: LexExportVouchers
+    40: MSGBOX: "Sync Complete": "Data has been synced to LexOrigin cloud."
+
+[Function: LexExportCompanies]
+    00: SET: TargetURL: $$LexServerURL + "/sync/companies"
+    10: HTTP POST: URL: #TargetURL: XMLREPORT: LexCompanyExport
+
+[Function: LexExportLedgers]
+    00: SET: TargetURL: $$LexServerURL + "/sync/ledgers"
+    10: HTTP POST: URL: #TargetURL: XMLREPORT: LexLedgerExport
+
+[Function: LexExportVouchers]
+    00: SET: TargetURL: $$LexServerURL + "/sync/vouchers"
+    10: HTTP POST: URL: #TargetURL: XMLREPORT: LexVoucherExport

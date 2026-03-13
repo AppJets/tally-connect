@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LexOrigin Tally Connector</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .header p {
+      font-size: 13px;
+      color: #8892b0;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .card-icon.tally {
+      background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+    }
+
+    .card-icon.cloud {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .card-icon.sync {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: #8892b0;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-badge.success {
+      background: rgba(56, 239, 125, 0.2);
+      color: #38ef7d;
+    }
+
+    .status-badge.error {
+      background: rgba(255, 82, 82, 0.2);
+      color: #ff5252;
+    }
+
+    .status-badge.warning {
+      background: rgba(255, 193, 7, 0.2);
+      color: #ffc107;
+    }
+
+    .status-badge.loading {
+      background: rgba(102, 126, 234, 0.2);
+      color: #667eea;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .status-dot.success { background: #38ef7d; }
+    .status-dot.error { background: #ff5252; }
+    .status-dot.warning { background: #ffc107; }
+    .status-dot.loading {
+      background: #667eea;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: #8892b0;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-group input::placeholder {
+      color: #5a6270;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-size: 12px;
+      color: #8892b0;
+    }
+
+    .info-value {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #667eea;
+    }
+
+    .checkbox-group label {
+      font-size: 13px;
+      color: #ccd6f6;
+      margin: 0;
+    }
+
+    .path-input {
+      display: flex;
+      gap: 8px;
+    }
+
+    .path-input input {
+      flex: 1;
+    }
+
+    .path-input .btn {
+      width: auto;
+      padding: 10px 14px;
+    }
+
+    .log-box {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 120px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .log-entry {
+      color: #8892b0;
+    }
+
+    .log-entry.success { color: #38ef7d; }
+    .log-entry.error { color: #ff5252; }
+    .log-entry.info { color: #667eea; }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">L</div>
+      <h1>LexOrigin Tally Connector</h1>
+      <p>Automatically sync your Tally data</p>
+    </div>
+
+    <!-- Tally Status Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon tally">T</div>
+        <div>
+          <div class="card-title">Tally Status</div>
+          <div class="card-subtitle">Local installation</div>
+        </div>
+        <div style="margin-left: auto;">
+          <span id="tallyStatus" class="status-badge loading">
+            <span class="status-dot loading"></span>
+            Detecting...
+          </span>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Installation Path</span>
+        <span id="tallyPath" class="info-value">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Version</span>
+        <span id="tallyVersion" class="info-value">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Gateway Port</span>
+        <span id="tallyPort" class="info-value">9000</span>
+      </div>
+      <button id="btnDetectTally" class="btn btn-secondary" style="margin-top: 12px;">
+        Detect Tally Installation
+      </button>
+    </div>
+
+    <!-- Cloud Connection Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon cloud">C</div>
+        <div>
+          <div class="card-title">Cloud Connection</div>
+          <div class="card-subtitle">LexOrigin Server</div>
+        </div>
+        <div style="margin-left: auto;">
+          <span id="cloudStatus" class="status-badge warning">
+            <span class="status-dot warning"></span>
+            Not configured
+          </span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="text" id="apiKey" placeholder="ltk_xxxxxxxxxxxx">
+      </div>
+
+      <div class="form-group">
+        <label>API Secret</label>
+        <input type="password" id="apiSecret" placeholder="lts_xxxxxxxxxxxx">
+      </div>
+
+      <div class="form-group">
+        <label>Server URL</label>
+        <input type="text" id="syncUrl" placeholder="http://localhost:3100/api/v1">
+      </div>
+
+      <div class="btn-group">
+        <button id="btnTestConnection" class="btn btn-secondary">Test Connection</button>
+        <button id="btnSaveConfig" class="btn btn-primary">Save Settings</button>
+      </div>
+    </div>
+
+    <!-- Sync Settings Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon sync">S</div>
+        <div>
+          <div class="card-title">Sync Status</div>
+          <div class="card-subtitle" id="lastSyncTime">Never synced</div>
+        </div>
+        <div style="margin-left: auto;">
+          <span id="syncStatus" class="status-badge warning">
+            <span class="status-dot warning"></span>
+            Idle
+          </span>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-bottom: 14px;">
+        <div class="checkbox-group">
+          <input type="checkbox" id="autoSync" checked>
+          <label for="autoSync">Auto-sync enabled</label>
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <select id="syncInterval" style="width: 100%; padding: 8px 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff; font-size: 13px;">
+            <option value="1">Every 1 min</option>
+            <option value="5" selected>Every 5 min</option>
+            <option value="15">Every 15 min</option>
+            <option value="30">Every 30 min</option>
+            <option value="60">Every hour</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="btnSyncNow" class="btn btn-success">
+        Sync Now
+      </button>
+
+      <div id="syncLog" class="log-box" style="margin-top: 14px;">
+        <div class="log-entry info">[Ready] Waiting for sync...</div>
+      </div>
+    </div>
+
+    <!-- TDL Installation Card -->
+    <div class="card" id="tdlCard">
+      <div class="card-header">
+        <div class="card-icon" style="background: linear-gradient(135deg, #b24592 0%, #f15f79 100%);">P</div>
+        <div>
+          <div class="card-title">TDL Plugin</div>
+          <div class="card-subtitle">Required for Tally integration</div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: #8892b0; margin-bottom: 12px;">
+        The TDL plugin enables data export from Tally. Click below to install it automatically.
+      </p>
+      <button id="btnInstallTdl" class="btn btn-primary">
+        Install TDL Plugin
+      </button>
+      <div id="tdlStatus" class="info-row" style="margin-top: 12px; display: none;">
+        <span class="info-label">Status</span>
+        <span class="info-value status-badge success">
+          <span class="status-dot success"></span>
+          Installed
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    // DOM Elements
+    const elements = {
+      tallyStatus: document.getElementById('tallyStatus'),
+      tallyPath: document.getElementById('tallyPath'),
+      tallyVersion: document.getElementById('tallyVersion'),
+      tallyPort: document.getElementById('tallyPort'),
+      cloudStatus: document.getElementById('cloudStatus'),
+      syncStatus: document.getElementById('syncStatus'),
+      lastSyncTime: document.getElementById('lastSyncTime'),
+      apiKey: document.getElementById('apiKey'),
+      apiSecret: document.getElementById('apiSecret'),
+      syncUrl: document.getElementById('syncUrl'),
+      autoSync: document.getElementById('autoSync'),
+      syncInterval: document.getElementById('syncInterval'),
+      syncLog: document.getElementById('syncLog'),
+      tdlStatus: document.getElementById('tdlStatus'),
+      btnDetectTally: document.getElementById('btnDetectTally'),
+      btnTestConnection: document.getElementById('btnTestConnection'),
+      btnSaveConfig: document.getElementById('btnSaveConfig'),
+      btnSyncNow: document.getElementById('btnSyncNow'),
+      btnInstallTdl: document.getElementById('btnInstallTdl'),
+    };
+
+    let tallyPath = '';
+
+    // Status badge helper
+    function setStatusBadge(element, status, text) {
+      const statusClasses = ['success', 'error', 'warning', 'loading'];
+      element.className = `status-badge ${status}`;
+      element.innerHTML = `<span class="status-dot ${status}"></span>${text}`;
+    }
+
+    // Add log entry
+    function addLog(message, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${time}] ${message}`;
+      elements.syncLog.appendChild(entry);
+      elements.syncLog.scrollTop = elements.syncLog.scrollHeight;
+    }
+
+    // Initialize
+    async function init() {
+      // Load saved config
+      const config = await ipcRenderer.invoke('get-config');
+      elements.apiKey.value = config.apiKey || '';
+      elements.apiSecret.value = config.apiSecret || '';
+      elements.syncUrl.value = config.syncUrl || 'http://localhost:3100/api/v1';
+      elements.autoSync.checked = config.autoSync !== false;
+      elements.syncInterval.value = config.syncInterval || 5;
+      tallyPath = config.tallyPath || '';
+
+      if (config.apiKey && config.apiSecret) {
+        setStatusBadge(elements.cloudStatus, 'success', 'Configured');
+      }
+
+      // Auto-detect Tally
+      detectTally();
+    }
+
+    // Detect Tally installation
+    async function detectTally() {
+      setStatusBadge(elements.tallyStatus, 'loading', 'Detecting...');
+      elements.btnDetectTally.disabled = true;
+
+      try {
+        const result = await ipcRenderer.invoke('detect-tally');
+
+        if (result) {
+          setStatusBadge(elements.tallyStatus, 'success', 'Detected');
+          elements.tallyPath.textContent = result.path;
+          elements.tallyVersion.textContent = result.version || 'Unknown';
+          tallyPath = result.path;
+
+          // Check if Tally is running
+          const isRunning = await ipcRenderer.invoke('check-tally-running');
+          if (isRunning) {
+            setStatusBadge(elements.tallyStatus, 'success', 'Running');
+          }
+
+          addLog(`Tally found at: ${result.path}`, 'success');
+        } else {
+          setStatusBadge(elements.tallyStatus, 'error', 'Not found');
+          elements.tallyPath.textContent = 'Not detected';
+          addLog('Tally installation not found. Please install Tally first.', 'error');
+        }
+      } catch (error) {
+        setStatusBadge(elements.tallyStatus, 'error', 'Error');
+        addLog(`Detection error: ${error.message}`, 'error');
+      }
+
+      elements.btnDetectTally.disabled = false;
+    }
+
+    // Test connection
+    async function testConnection() {
+      setStatusBadge(elements.cloudStatus, 'loading', 'Testing...');
+      elements.btnTestConnection.disabled = true;
+
+      try {
+        const result = await ipcRenderer.invoke('test-connection');
+
+        if (result.success) {
+          setStatusBadge(elements.cloudStatus, 'success', 'Connected');
+          addLog('Server connection successful!', 'success');
+        } else {
+          setStatusBadge(elements.cloudStatus, 'error', 'Failed');
+          addLog(`Connection failed: ${result.error}`, 'error');
+        }
+      } catch (error) {
+        setStatusBadge(elements.cloudStatus, 'error', 'Error');
+        addLog(`Connection error: ${error.message}`, 'error');
+      }
+
+      elements.btnTestConnection.disabled = false;
+    }
+
+    // Save configuration
+    async function saveConfig() {
+      elements.btnSaveConfig.disabled = true;
+
+      const config = {
+        apiKey: elements.apiKey.value.trim(),
+        apiSecret: elements.apiSecret.value.trim(),
+        syncUrl: elements.syncUrl.value.trim(),
+        tallyPath: tallyPath,
+        autoSync: elements.autoSync.checked,
+        syncInterval: parseInt(elements.syncInterval.value),
+      };
+
+      try {
+        const result = await ipcRenderer.invoke('save-config', config);
+
+        if (result.success) {
+          setStatusBadge(elements.cloudStatus, 'success', 'Configured');
+          addLog('Settings saved successfully!', 'success');
+        } else {
+          addLog(`Failed to save: ${result.error}`, 'error');
+        }
+      } catch (error) {
+        addLog(`Save error: ${error.message}`, 'error');
+      }
+
+      elements.btnSaveConfig.disabled = false;
+    }
+
+    // Sync now
+    async function syncNow() {
+      setStatusBadge(elements.syncStatus, 'loading', 'Syncing...');
+      elements.btnSyncNow.disabled = true;
+      elements.btnSyncNow.innerHTML = '<span class="spinner"></span> Syncing...';
+
+      addLog('Starting sync...', 'info');
+
+      try {
+        const result = await ipcRenderer.invoke('sync-now');
+
+        if (result.success) {
+          setStatusBadge(elements.syncStatus, 'success', 'Synced');
+          elements.lastSyncTime.textContent = `Last sync: ${new Date().toLocaleString()}`;
+          addLog(`Sync complete! ${result.companiesSynced || 0} companies synced.`, 'success');
+        } else {
+          setStatusBadge(elements.syncStatus, 'error', 'Failed');
+          addLog(`Sync failed: ${result.error}`, 'error');
+        }
+      } catch (error) {
+        setStatusBadge(elements.syncStatus, 'error', 'Error');
+        addLog(`Sync error: ${error.message}`, 'error');
+      }
+
+      elements.btnSyncNow.disabled = false;
+      elements.btnSyncNow.innerHTML = 'Sync Now';
+    }
+
+    // Install TDL plugin
+    async function installTdl() {
+      if (!tallyPath) {
+        addLog('Please detect Tally installation first.', 'error');
+        return;
+      }
+
+      elements.btnInstallTdl.disabled = true;
+      elements.btnInstallTdl.innerHTML = '<span class="spinner"></span> Installing...';
+
+      try {
+        const result = await ipcRenderer.invoke('install-tdl', tallyPath);
+
+        if (result.success) {
+          elements.tdlStatus.style.display = 'flex';
+          addLog(`TDL plugin installed at: ${result.path}`, 'success');
+          addLog('Please restart Tally to activate the plugin.', 'info');
+        } else {
+          addLog(`TDL installation failed: ${result.error}`, 'error');
+        }
+      } catch (error) {
+        addLog(`TDL error: ${error.message}`, 'error');
+      }
+
+      elements.btnInstallTdl.disabled = false;
+      elements.btnInstallTdl.innerHTML = 'Install TDL Plugin';
+    }
+
+    // Event listeners
+    elements.btnDetectTally.addEventListener('click', detectTally);
+    elements.btnTestConnection.addEventListener('click', testConnection);
+    elements.btnSaveConfig.addEventListener('click', saveConfig);
+    elements.btnSyncNow.addEventListener('click', syncNow);
+    elements.btnInstallTdl.addEventListener('click', installTdl);
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
