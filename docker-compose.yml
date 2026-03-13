@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lex_tally_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lex_tally
+      POSTGRES_PASSWORD: lex_tally_dev_password
+      POSTGRES_DB: lex_tally_db
+    ports:
+      - '5433:5432'   # 5433 to avoid conflict with local postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U lex_tally -d lex_tally_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: lex_tally_redis
+    restart: unless-stopped
+    ports:
+      - '6380:6379'   # 6380 to avoid conflict with local redis
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Optional: BullMQ dashboard for local dev monitoring
+  bullboard:
+    image: deadly0/bull-board:latest
+    container_name: lex_tally_bullboard
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+
+volumes:
+  pgdata:
+  redisdata:
