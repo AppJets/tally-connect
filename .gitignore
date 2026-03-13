@@ -1,5 +1,11 @@
 # Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
 
 # Environment files
 .env
@@ -21,6 +27,8 @@ Thumbs.db
 *.swp
 *.swo
 
-# Build output
-dist/
-build/
+# TypeScript
+*.tsbuildinfo
+
+# Test coverage
+coverage/
