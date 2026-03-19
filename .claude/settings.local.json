@@ -25,7 +25,24 @@
       "Bash(node server.js:*)",
       "Bash(git init:*)",
       "Bash(git remote add:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(dir \"C:\\\\Lex Origin\\\\lexai-crm-fe\" /s /b)",
+      "Bash(timeout:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File \"C:\\\\Lex Origin\\\\lex-tally-connector\\\\test-tally.ps1\")",
+      "Bash(node test-tally.js:*)",
+      "Bash(node test-full-sync.js:*)",
+      "Bash(curl:*)",
+      "Bash(node test-ledgers.js:*)",
+      "Bash(tasklist:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx electron .)",
+      "Bash(powershell \"Get-Process -Name ''*electron*'' -ErrorAction SilentlyContinue | Select-Object Id,ProcessName\")",
+      "Bash(node_modules/.bin/electron .)",
+      "WebFetch(domain:localhost)"
     ]
   }
 }
