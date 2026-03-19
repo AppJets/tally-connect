@@ -174,6 +174,78 @@ export class ActivationService {
     };
   }
 
+  /**
+   * Regenerate API credentials for an existing subscription.
+   * Revokes old credentials and issues new ones.
+   */
+  async regenerateCredentials(customerId: string, clientId: string): Promise<ActivationResult> {
+    const subscription = await this.subscriptionRepo.findOne({
+      where: { customerId, clientId },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('No subscription found for this customer and client.');
+    }
+
+    if (subscription.status !== SubscriptionStatus.ACTIVE) {
+      throw new BadRequestException(
+        `Cannot regenerate credentials for ${subscription.status} subscription. Please reactivate first.`
+      );
+    }
+
+    if (subscription.expiresAt < new Date()) {
+      subscription.status = SubscriptionStatus.EXPIRED;
+      await this.subscriptionRepo.save(subscription);
+      throw new BadRequestException('Subscription has expired. Please renew to get new credentials.');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Revoke all existing credentials
+      await queryRunner.manager.update(
+        ApiCredential,
+        { subscriptionId: subscription.id },
+        { isActive: false },
+      );
+
+      // Generate fresh credentials
+      const { apiKey, apiSecret, apiSecretHash, apiSecretPrefix } =
+        await this.generateCredentials();
+
+      const credential = this.credentialRepo.create({
+        subscriptionId: subscription.id,
+        apiKey,
+        apiSecretHash,
+        apiSecretPrefix,
+        isActive: true,
+        expiresAt: subscription.expiresAt,
+      });
+      await queryRunner.manager.save(credential);
+
+      await queryRunner.commitTransaction();
+
+      this.logger.log(`Credentials regenerated for customer=${customerId} client=${clientId}`);
+
+      return {
+        subscriptionId: subscription.id,
+        apiKey,
+        apiSecret,
+        apiSecretPrefix,
+        expiresAt: subscription.expiresAt,
+        message: 'New credentials generated. Previous credentials have been revoked. Store your api_secret securely — it will not be shown again.',
+      };
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error('Credential regeneration failed', err);
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   private async generateCredentials() {
