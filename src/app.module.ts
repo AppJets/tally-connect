@@ -1,6 +1,5 @@
-// src/app.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { ThrottlerModule } from '@nestjs/throttler';
 import configuration from './config/configuration';
@@ -9,8 +8,10 @@ import { ActivationModule } from './activation/activation.module';
 import { TallyConnectionModule } from './tally-connection/tally-connection.module';
 import { SyncModule } from './sync/sync.module';
 import { NormalizationModule } from './normalization/normalization.module';
+import { HealthController } from './health.controller';
 
 @Module({
+  controllers: [HealthController],
   imports: [
     // ── Config ──────────────────────────────────────────────────────────────
     ConfigModule.forRoot({
@@ -24,18 +25,18 @@ import { NormalizationModule } from './normalization/normalization.module';
 
     // ── Queue ────────────────────────────────────────────────────────────────
     BullModule.forRootAsync({
-      useFactory: (config) => ({
+      useFactory: (configService: ConfigService) => ({
         connection: {
-          host: config.get('redis.host'),
-          port: config.get<number>('redis.port'),
-          password: config.get('redis.password'),
+          host: configService.get<string>('redis.host'),
+          port: configService.get<number>('redis.port'),
+          password: configService.get<string>('redis.password'),
         },
         defaultJobOptions: {
           removeOnComplete: { count: 1000 },
           removeOnFail: false,
         },
       }),
-      inject: ['ConfigService'],
+      inject: [ConfigService],
     }),
 
     // ── Rate limiting ─────────────────────────────────────────────────────────

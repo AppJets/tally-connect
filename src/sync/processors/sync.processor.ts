@@ -62,14 +62,14 @@ export class SyncProcessor extends WorkerHost {
           connectionId: normalized.connectionId,
           tallyCompanyId: payload.tallyCompanyId,
           voucherNumber: payload.voucherNumber,
-          voucherType: normalized.voucherType,
+          voucherType: normalized.voucherType ?? undefined,
           voucherDate: new Date(payload.voucherDate),
-          partyName: normalized.partyName,
+          partyName: normalized.partyName ?? undefined,
           narration: normalized.narration,
           amount: normalized.amount,
-          gstin: normalized.gstin,
+          gstin: normalized.gstin ?? undefined,
           placeOfSupply: normalized.placeOfSupply,
-          gstAmount: normalized.gstAmount,
+          gstAmount: normalized.gstAmount ?? undefined,
           rawData: payload.rawData ?? payload,
         })
         .orUpdate(
@@ -116,10 +116,10 @@ export class SyncProcessor extends WorkerHost {
             connectionId: normalized.connectionId,
             tallyCompanyId,
             ledgerName: ledger.ledgerName,
-            groupName: normalized.groupName,
+            groupName: normalized.groupName ?? undefined,
             closingBalance: normalized.closingBalance,
             balanceType: normalized.balanceType,
-            gstin: normalized.gstin,
+            gstin: normalized.gstin ?? undefined,
             rawData: ledger.rawData ?? ledger,
           })
           .orUpdate(
