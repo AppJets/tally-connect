@@ -69,6 +69,21 @@ export class ActivationController {
     return this.activationService.getStatus(customerId, clientId);
   }
 
+  @Post('regenerate/:customerId/:clientId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Regenerate API credentials for an active subscription' })
+  @ApiHeader({ name: 'X-Lex-Signature', description: 'HMAC-SHA256 of request body' })
+  async regenerateCredentials(
+    @Headers('x-lex-signature') signature: string,
+    @Req() req: RawBodyRequest<Request>,
+    @Param('customerId') customerId: string,
+    @Param('clientId') clientId: string,
+  ) {
+    // POST with empty body or minimal body
+    this.verifySignature(signature, req.rawBody ?? Buffer.from(''));
+    return this.activationService.regenerateCredentials(customerId, clientId);
+  }
+
   // ── Private ──────────────────────────────────────────────────────────────
 
   private verifySignature(signature: string, rawBody: Buffer | undefined): void {

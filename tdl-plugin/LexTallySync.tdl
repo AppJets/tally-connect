@@ -1,0 +1,277 @@
+;; ============================================================================
+;; LexOrigin Tally Sync Plugin v1.0
+;; ============================================================================
+;; This TDL plugin syncs vouchers and ledgers from TallyPrime to LexOrigin
+;;
+;; INSTALLATION:
+;; 1. Copy this file to: C:\TallyPrime\TDL\ (or your Tally installation TDL folder)
+;; 2. In TallyPrime: Gateway of Tally > F12 (Configure) > Product & Features > TDL Configuration
+;; 3. Set "Load TDL Files" to Yes
+;; 4. Add this file path to the list
+;; 5. Restart TallyPrime
+;;
+;; CONFIGURATION:
+;; After loading, go to: Gateway of Tally > Lex Connector > Configure
+;; Enter your API Key and API Secret from LexOrigin Connectors page
+;; ============================================================================
+
+[System: Variable]
+    LEX_API_KEY         : String : ""
+    LEX_API_SECRET      : String : ""
+    LEX_SYNC_URL        : String : "http://localhost:3100/api/v1"
+    LEX_COMPANY_ID      : String : ""
+    LEX_DEVICE_ID       : String : ""
+    LEX_SYNC_ENABLED    : Logical : No
+    LEX_LAST_SYNC       : String : ""
+
+;; ============================================================================
+;; MENU INTEGRATION
+;; ============================================================================
+
+[#Menu: Gateway of Tally]
+    Add: Key Item : Lex Connector : L : CALL : Lex Main Menu
+
+[Menu: Lex Main Menu]
+    Add: Key Item : Configure : C : MODIFY : Lex Configuration
+    Add: Key Item : Sync Now : S : CALL : Lex Manual Sync
+    Add: Key Item : View Status : V : DISPLAY : Lex Status Report
+    Add: Key Item : Test Connection : T : CALL : Lex Test Connection
+
+;; ============================================================================
+;; CONFIGURATION FORM
+;; ============================================================================
+
+[Report: Lex Configuration]
+    Form    : Lex Configuration Form
+    Title   : "LexOrigin Tally Connector - Configuration"
+
+[Form: Lex Configuration Form]
+    Parts   : Lex Config Parts
+    Buttons : Lex Config Buttons
+    Width   : 60% Page
+    Height  : 50% Page
+
+[Part: Lex Config Parts]
+    Lines   : Lex Config Title, Lex Config API Key, Lex Config API Secret, Lex Config URL, Lex Config Enable
+    Repeat  : Lex Config Lines
+    Scroll  : Vertical
+
+[Line: Lex Config Title]
+    Fields  : Medium Prompt
+    Local   : Field : Medium Prompt : Info : "=== LexOrigin Connector Configuration ==="
+
+[Line: Lex Config API Key]
+    Fields  : Short Prompt, Lex API Key Field
+    Local   : Field : Short Prompt : Info : "API Key"
+
+[Line: Lex Config API Secret]
+    Fields  : Short Prompt, Lex API Secret Field
+    Local   : Field : Short Prompt : Info : "API Secret"
+
+[Line: Lex Config URL]
+    Fields  : Short Prompt, Lex URL Field
+    Local   : Field : Short Prompt : Info : "Sync URL"
+
+[Line: Lex Config Enable]
+    Fields  : Short Prompt, Lex Enable Field
+    Local   : Field : Short Prompt : Info : "Enable Sync"
+
+[Field: Lex API Key Field]
+    Use     : Name Field
+    Set as  : LEX_API_KEY
+    Storage : LEX_API_KEY
+
+[Field: Lex API Secret Field]
+    Use     : Name Field
+    Set as  : LEX_API_SECRET
+    Storage : LEX_API_SECRET
+
+[Field: Lex URL Field]
+    Use     : Name Field
+    Set as  : LEX_SYNC_URL
+    Storage : LEX_SYNC_URL
+
+[Field: Lex Enable Field]
+    Use     : Logical Field
+    Set as  : LEX_SYNC_ENABLED
+    Storage : LEX_SYNC_ENABLED
+
+[Button: Lex Config Buttons]
+    Key     : Ctrl+A : Save : Yes
+    Title   : "Save Configuration"
+    Action  : CALL : Lex Save Config
+
+;; ============================================================================
+;; SYNC FUNCTIONS
+;; ============================================================================
+
+[Function: Lex Test Connection]
+    Variable : vResult : String
+    Variable : vUrl : String
+
+    00 : SET : vUrl : ##LEX_SYNC_URL + "/tally/sync/connect"
+
+    10 : HTTP POST : vUrl
+       : Headers : "X-API-Key: " + ##LEX_API_KEY + "|X-API-Secret: " + ##LEX_API_SECRET + "|Content-Type: application/json"
+       : Body : $$LexBuildConnectPayload
+       : Response : vResult
+
+    20 : IF : $$StringContains:vResult:"accepted"
+    25 :     MSG BOX : "Success" : "Connection successful! Tally is now connected to LexOrigin."
+    30 : ELSE
+    35 :     MSG BOX : "Error" : "Connection failed. Please check your API credentials." + vResult
+    40 : ENDIF
+
+[Function: Lex Manual Sync]
+    00 : IF : NOT ##LEX_SYNC_ENABLED
+    05 :     MSG BOX : "Warning" : "Sync is disabled. Please enable it in Configuration."
+    10 :     RETURN
+    15 : ENDIF
+
+    20 : CALL : Lex Sync All Vouchers
+    30 : CALL : Lex Sync All Ledgers
+    40 : MSG BOX : "Sync Complete" : "All vouchers and ledgers have been synced to LexOrigin."
+
+[Function: Lex Sync Voucher]
+    Parameter : pVoucherNumber : String
+    Variable  : vResult : String
+    Variable  : vUrl : String
+    Variable  : vPayload : String
+
+    00 : SET : vUrl : ##LEX_SYNC_URL + "/tally/sync/voucher"
+    10 : SET : vPayload : $$LexBuildVoucherPayload:##pVoucherNumber
+
+    20 : HTTP POST : vUrl
+       : Headers : "X-API-Key: " + ##LEX_API_KEY + "|X-API-Secret: " + ##LEX_API_SECRET + "|Content-Type: application/json"
+       : Body : vPayload
+       : Response : vResult
+
+    30 : LOG : "Lex Sync Voucher: " + ##pVoucherNumber + " - " + vResult
+
+[Function: Lex Sync All Vouchers]
+    Variable : vVoucher : Voucher
+    Walk     : Voucher
+    Filter   : $Date >= $$MonthStart:$Date
+
+    10 : FOR EACH : vVoucher
+    20 :     CALL : Lex Sync Voucher : $VoucherNumber
+    30 : END FOR
+
+[Function: Lex Sync All Ledgers]
+    Variable : vResult : String
+    Variable : vUrl : String
+
+    00 : SET : vUrl : ##LEX_SYNC_URL + "/tally/sync/ledgers"
+
+    10 : HTTP POST : vUrl
+       : Headers : "X-API-Key: " + ##LEX_API_KEY + "|X-API-Secret: " + ##LEX_API_SECRET + "|Content-Type: application/json"
+       : Body : $$LexBuildLedgersPayload
+       : Response : vResult
+
+    20 : LOG : "Lex Sync Ledgers: " + vResult
+
+;; ============================================================================
+;; PAYLOAD BUILDERS
+;; ============================================================================
+
+[Function: LexBuildConnectPayload]
+    Variable : vCompanyName : String
+    Variable : vDeviceId : String
+
+    00 : SET : vCompanyName : $$ContextCompanyName
+    10 : SET : vDeviceId : $$GetMachineId
+
+    20 : RETURN : "{\"tallyCompanyId\":\"" + vCompanyName + "\",\"tallyCompanyName\":\"" + vCompanyName + "\",\"deviceId\":\"" + vDeviceId + "\",\"deviceLabel\":\"TallyPrime\"}"
+
+[Function: LexBuildVoucherPayload]
+    Parameter : pVoucherNumber : String
+    Variable  : vVoucher : Voucher
+    Variable  : vJson : String
+
+    00 : SET : vVoucher : $Voucher:##pVoucherNumber
+
+    10 : SET : vJson : "{"
+    20 : SET : vJson : ##vJson + "\"tallyCompanyId\":\"" + $$ContextCompanyName + "\","
+    30 : SET : vJson : ##vJson + "\"deviceId\":\"" + $$GetMachineId + "\","
+    40 : SET : vJson : ##vJson + "\"voucherNumber\":\"" + $VoucherNumber:##vVoucher + "\","
+    50 : SET : vJson : ##vJson + "\"voucherType\":\"" + $VoucherTypeName:##vVoucher + "\","
+    60 : SET : vJson : ##vJson + "\"voucherDate\":\"" + $$DateToString:$Date:##vVoucher:"yyyy-MM-dd" + "\","
+    70 : SET : vJson : ##vJson + "\"partyName\":\"" + $PartyLedgerName:##vVoucher + "\","
+    80 : SET : vJson : ##vJson + "\"amount\":" + $Amount:##vVoucher + ","
+    90 : SET : vJson : ##vJson + "\"narration\":\"" + $Narration:##vVoucher + "\""
+    100: SET : vJson : ##vJson + "}"
+
+    110: RETURN : ##vJson
+
+[Function: LexBuildLedgersPayload]
+    Variable : vLedger : Ledger
+    Variable : vJson : String
+    Variable : vFirst : Logical
+
+    00 : SET : vJson : "{\"tallyCompanyId\":\"" + $$ContextCompanyName + "\",\"deviceId\":\"" + $$GetMachineId + "\",\"ledgers\":["
+    05 : SET : vFirst : Yes
+
+    10 : Walk : Ledger
+    20 : FOR EACH : vLedger
+    25 :     IF : NOT ##vFirst
+    26 :         SET : vJson : ##vJson + ","
+    27 :     ENDIF
+    28 :     SET : vFirst : No
+    30 :     SET : vJson : ##vJson + "{"
+    40 :     SET : vJson : ##vJson + "\"ledgerName\":\"" + $Name:##vLedger + "\","
+    50 :     SET : vJson : ##vJson + "\"groupName\":\"" + $Parent:##vLedger + "\","
+    60 :     SET : vJson : ##vJson + "\"closingBalance\":" + $ClosingBalance:##vLedger
+    70 :     SET : vJson : ##vJson + "}"
+    80 : END FOR
+
+    90 : SET : vJson : ##vJson + "]}"
+    100: RETURN : ##vJson
+
+;; ============================================================================
+;; AUTO SYNC ON VOUCHER SAVE (Optional - uncomment to enable)
+;; ============================================================================
+
+;; [#Voucher: *]
+;;     On: Save : CALL : Lex Auto Sync Voucher : $VoucherNumber
+;;
+;; [Function: Lex Auto Sync Voucher]
+;;     Parameter : pVoucherNumber : String
+;;     00 : IF : ##LEX_SYNC_ENABLED
+;;     10 :     CALL : Lex Sync Voucher : ##pVoucherNumber
+;;     20 : ENDIF
+
+;; ============================================================================
+;; STATUS REPORT
+;; ============================================================================
+
+[Report: Lex Status Report]
+    Form    : Lex Status Form
+    Title   : "LexOrigin Connector Status"
+
+[Form: Lex Status Form]
+    Parts   : Lex Status Parts
+    Width   : 60% Page
+    Height  : 40% Page
+
+[Part: Lex Status Parts]
+    Lines   : Lex Status Line 1, Lex Status Line 2, Lex Status Line 3, Lex Status Line 4
+
+[Line: Lex Status Line 1]
+    Fields  : Medium Prompt
+    Local   : Field : Medium Prompt : Info : "API Key: " + $$StringLeft:##LEX_API_KEY:10 + "..."
+
+[Line: Lex Status Line 2]
+    Fields  : Medium Prompt
+    Local   : Field : Medium Prompt : Info : "Sync URL: " + ##LEX_SYNC_URL
+
+[Line: Lex Status Line 3]
+    Fields  : Medium Prompt
+    Local   : Field : Medium Prompt : Info : "Sync Enabled: " + IF ##LEX_SYNC_ENABLED THEN "Yes" ELSE "No"
+
+[Line: Lex Status Line 4]
+    Fields  : Medium Prompt
+    Local   : Field : Medium Prompt : Info : "Company: " + $$ContextCompanyName
+
+;; ============================================================================
+;; END OF PLUGIN
+;; ============================================================================
