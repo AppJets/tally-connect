@@ -8,12 +8,11 @@ dist/
 build/
 
 # Environment files — NEVER commit real credentials
-.env
-.env.local
 .env.*.local
 
 # Logs
 logs/
+temp_auto_push.bat
 *.log
 npm-debug.log*
 
@@ -23,7 +22,6 @@ Thumbs.db
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
 
@@ -32,3 +30,6 @@ Thumbs.db
 
 # Test coverage
 coverage/
+.gitignore
+branch_structure.json
+config.bat
