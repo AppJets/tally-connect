@@ -51,7 +51,7 @@ async function bootstrap() {
     logger.log('Swagger docs available at /docs');
   }
 
-  const port = process.env.PORT ?? 3100;
+  const port = process.env.PORT ?? 8009;
   await app.listen(port);
   logger.log(`lex-tally-sync-service running on port ${port}`);
 }
