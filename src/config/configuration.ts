@@ -1,7 +1,7 @@
 // src/config/configuration.ts
 
 export default () => ({
-  port: parseInt(process.env.PORT ?? '3100', 10),
+  port: parseInt(process.env.PORT ?? '8009', 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
   database: {
