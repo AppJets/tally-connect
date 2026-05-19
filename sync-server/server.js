@@ -3,7 +3,8 @@ const cors = require('cors');
 const crypto = require('crypto');
 
 const app = express();
-const PORT = 3600;
+// Use Railway's injected PORT in production; fall back to 3600 for local dev.
+const PORT = process.env.PORT || 3600;
 
 // Valid API credentials
 const VALID_API_KEY = 'ltk_3a0d801c8d324153b0619f3f79685dea';
@@ -20,7 +21,20 @@ const dataStore = {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:3003'],
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3003',
+    'http://localhost:8001',
+    'http://localhost:8003',
+    'http://localhost:8008',
+    'https://lexai-crm-fe.vercel.app',
+    'https://lexai-admin-fe.vercel.app',
+    'https://lexorigin.com',
+    'https://www.lexorigin.com',
+    'https://lexorigin.in',
+    'https://www.lexorigin.in',
+  ],
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
