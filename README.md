@@ -1,4 +1,4 @@
-# LexOrigin Tally Connector
+# LexOrigin Tally Connector v.1.0
 
 Desktop application for syncing TallyPrime/Tally.ERP9 data with LexOrigin cloud.
 
