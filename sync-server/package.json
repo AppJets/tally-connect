@@ -4,8 +4,8 @@
   "description": "Local sync server for LexOrigin Tally Connector",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node init && node server.js",
+    "dev": "node init && node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
