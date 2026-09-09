@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: lex_tally
-      POSTGRES_PASSWORD: lex_tally_dev_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}        # Gap 21+29: never hardcode — set in .env
       POSTGRES_DB: lex_tally_db
     ports:
       - '5433:5432'   # 5433 to avoid conflict with local postgres

@@ -8,8 +8,6 @@ dist/
 build/
 
 # Environment files
-.env
-.env.local
 .env.*.local
 
 # Logs
@@ -23,7 +21,6 @@ Thumbs.db
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
 
@@ -32,3 +29,8 @@ Thumbs.db
 
 # Test coverage
 coverage/
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
+config.bat

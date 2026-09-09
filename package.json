@@ -4,9 +4,9 @@
   "description": "LexOrigin Tally Connector - Sync TallyPrime data automatically",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder",
-    "build:win": "electron-builder --win",
+    "start": "node init && electron .",
+    "build": "node init && electron-builder",
+    "build:win": "node init && electron-builder --win",
     "pack": "electron-builder --dir"
   },
   "author": "LexOrigin",
@@ -26,7 +26,9 @@
       "output": "dist"
     },
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "icon": "assets/icon.ico"
     },
     "nsis": {
